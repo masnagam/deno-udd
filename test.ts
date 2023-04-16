@@ -159,3 +159,35 @@ import "https://raw.githubusercontent.com/foo/bar/main/mod.ts#=";
   const results = await testUdd(contents, expected);
   assertEquals(results.length, 0);
 });
+
+Deno.test("uddIgnoreComments", async () => {
+  {
+    const contents = `//import "https://fakeregistry.com/foo@0.0.1/mod.ts";`;
+    const expected = contents;
+    const results = await testUdd(contents, expected);
+    assertEquals(results.length, 0);
+  }
+  {
+    const contents = `/*import "https://fakeregistry.com/foo@0.0.1/mod.ts";*/`;
+    const expected = contents;
+    const results = await testUdd(contents, expected);
+    assertEquals(results.length, 0);
+  }
+  // limitations
+  //
+  // TODO: probably, we should use a js parser and collect and modify import
+  // declarations in the AST.  Then, serialize the modified AST to the source
+  // text.
+  {
+    const contents = `
+//import "https://fakeregistry.com/foo@0.0.1/mod.ts";
+import "https://fakeregistry.com/foo@0.0.1/mod.ts";
+`;
+    const expected = `
+//import "https://fakeregistry.com/foo@0.0.2/mod.ts";
+import "https://fakeregistry.com/foo@0.0.2/mod.ts";
+`;
+    const results = await testUdd(contents, expected);
+    assertEquals(results.length, 1);
+  }
+});

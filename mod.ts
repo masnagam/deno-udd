@@ -59,7 +59,14 @@ export class Udd {
   async run(): Promise<UddResult[]> {
     const content: string = await this.content();
 
-    const urls: string[] = importUrls(content, this.registries);
+    // Remove "comment-like" strings from `content`.
+    //
+    // This is a naive way and not a proper way to remove comments from
+    // JavaScript and TypeScript files, but works well for our purpose.
+    const contentWithoutComments =
+      content.replace(/\/\*([^*]|\*[^\/])*\*\/|(?<=[^:])\/\/.*|^\/\/.*/gm, '');
+
+    const urls: string[] = importUrls(contentWithoutComments, this.registries);
     this.progress.n = urls.length;
 
     // from a url we need to extract the current version
